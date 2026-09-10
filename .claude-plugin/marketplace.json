@@ -10,7 +10,7 @@
     {
       "name": "account",
       "description": "Switchboard plugin for Claude Code. Manage and switch between multiple accounts without logout.",
-      "version": "3.0.3",
+      "version": "3.0.4",
       "author": {
         "name": "lee-ji-hoon",
         "email": "lee-ji-hoon@example.com"

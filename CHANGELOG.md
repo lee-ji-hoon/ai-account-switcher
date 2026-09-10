@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.4] - 2026-09-10
+
+### Fixed
+- **macOS 앱 릴리스 빌드 복구** — `main.swift`의 호출 인자 trailing comma는 Swift 6.1+ 컴파일러만 받는 문법(SE-0439)이라, 릴리스 러너의 Swift 5.10에서 `unexpected ',' separator`로 v3.0.3 태그 워크플로가 실패했다. 쉼표를 제거하고 정적 회귀 테스트로 고정한다. Swift는 태그 워크플로에서만 컴파일되고 `test.yml`은 Ubuntu에서 Python만 돌리므로, 최신 로컬 툴체인에서는 이 실패를 재현할 수 없어 문법 검사로 대신한다.
+
+### Documentation
+- `README.md`와 `README.ko.md`의 Codex 스냅샷 설명을 실측 범위로 정정했다 — 이미 만료된 비활성 계정 스냅샷은 동기화로 되살아나지 않으며 해당 계정의 `codex login`이 필요하다.
+
 ## [3.0.3] - 2026-09-10
 
 ### Added

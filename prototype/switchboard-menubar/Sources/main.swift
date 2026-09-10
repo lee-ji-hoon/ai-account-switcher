@@ -246,7 +246,7 @@ final class PrototypeStore: ObservableObject {
                     .filter(\.isLiveOrigin)
                     .map { $0.account },
                 checkedAt: liveProvider.checkedAt.hasPrefix("CACHE") ? liveProvider.checkedAt : "LIVE · \(liveProvider.checkedAt)",
-                note: liveProvider.note,
+                note: liveProvider.note
             )
         }
     }
