@@ -81,8 +81,13 @@ CODEX_INDEX_FILE = CODEX_ACCOUNTS_DIR / "index.json"
 
 
 def is_codex_available() -> bool:
-    """multi-login-codex 계정 인덱스가 존재하는지 확인"""
-    return CODEX_INDEX_FILE.exists()
+    """Codex 연동 가능 여부 — 저장된 계정 인덱스 또는 현재 CLI 로그인이 있으면 True.
+
+    인덱스만 보면 새 머신에서 첫 계정을 등록할 수 없다(인덱스는 등록해야
+    생기는데 등록 메뉴가 인덱스 존재에 가려짐). auth.json(Codex CLI 로그인)도
+    가용 신호로 취급해 첫 등록 경로를 연다.
+    """
+    return CODEX_INDEX_FILE.exists() or CODEX_AUTH_FILE.exists()
 
 
 def load_codex_index() -> dict:
@@ -111,6 +116,53 @@ def get_current_codex_account_id() -> str | None:
     if not auth:
         return None
     return auth.get("tokens", {}).get("account_id")
+
+
+def _auth_generation(auth: dict | None) -> tuple[int, str]:
+    """auth 스냅샷의 세대 — (access_token exp, last_refresh). 클수록 최신."""
+    tokens = auth.get("tokens", {}) if auth else {}
+    raw_exp = _decode_jwt_payload(tokens.get("access_token", "") or "").get("exp")
+    try:
+        exp = int(raw_exp)
+    except (TypeError, ValueError):
+        exp = 0
+    return exp, str((auth or {}).get("last_refresh") or "")
+
+
+def sync_active_codex_snapshot() -> str | None:
+    """활성 auth.json을 소유 계정 스냅샷(auth_{id}.json)에 되쓴다.
+
+    Codex CLI는 ~/.codex/auth.json만 갱신하고, 갱신할 때 refresh_token이
+    회전한다. 스냅샷을 따라 갱신하지 않으면 다른 계정으로 로그인/전환한 뒤
+    이전 계정 스냅샷에는 만료된 access_token과 이미 소진된 refresh_token만
+    남아 실제로 `codex login` 재로그인이 필요해진다. 활성 auth를 읽는 경로마다
+    호출해 그 드리프트를 막는다. 반환: 갱신한 계정 id 또는 None.
+    """
+    live = read_codex_auth()
+    if not live:
+        return None
+    account_id = live.get("tokens", {}).get("account_id")
+    if not account_id:
+        return None
+    stored_id = None
+    for acc in load_codex_index().get("accounts", []):
+        if acc.get("account_id") == account_id:
+            stored_id = acc.get("id")
+            break
+    if not isinstance(stored_id, str) or not _ACCOUNT_ID.fullmatch(stored_id):
+        return None
+    snapshot = CODEX_ACCOUNTS_DIR / f"auth_{stored_id}.json"
+    if snapshot.is_symlink():
+        return None
+    stored = read_codex_auth(snapshot)
+    if stored == live:
+        return None
+    # downgrade 금지 — 더 최신인 스냅샷을 오래된 활성 auth로 덮지 않는다.
+    if _auth_generation(live) <= _auth_generation(stored):
+        return None
+    if not write_codex_auth(live, snapshot):
+        return None
+    return stored_id
 
 
 def get_codex_token_status(acc: dict) -> str:
@@ -168,6 +220,10 @@ def switch_codex_account(acc: dict) -> tuple[bool, str]:
     account_id = acc.get("id")
     if not isinstance(account_id, str) or not _ACCOUNT_ID.fullmatch(account_id):
         return False, "유효하지 않은 Codex 계정 ID입니다"
+    # 전환으로 밀려나는 현재 계정의 회전된 refresh_token을 먼저 스냅샷에 보존한다.
+    # 대상이 곧 현재 계정이면 이 동기화가 stale 스냅샷을 최신 auth로 끌어올려
+    # 아래 write가 live를 과거로 되돌리는 것도 막는다.
+    sync_active_codex_snapshot()
     auth_file = CODEX_ACCOUNTS_DIR / f"auth_{account_id}.json"
     if auth_file.is_symlink():
         return False, "심볼릭 링크 인증 파일은 사용할 수 없습니다"

@@ -9,13 +9,19 @@ AI 코딩 CLI 계정을 한곳에서 모니터링하고 전환합니다. 현재 
 ![개인정보가 포함되지 않은 Switchboard 데모 화면](docs/images/switchboard-overview.png)
 
 Claude/Codex usage API, Grok 로컬 `/usage`, Antigravity의 읽기 전용
-`/usage`·`/credits` JSON을 읽습니다. `LIVE`와 보강용 `DEMO`를 구분하며,
-사용량·초기화 시각·Codex 리셋 크레딧·AGY 크레딧을 표시하고 남은 한도에
-따라 계정을 추천합니다.
+`/usage`·`/credits` JSON을 읽습니다. 일반 실행은 `LIVE` 데이터만 표시하며,
+사용량을 읽지 못한 공급자는 예시로 보강하지 않고 가용하지 않음으로 표시합니다.
+`DEMO` 예시는 명시적인 `--demo-only` 캡처 모드에서만 사용할 수 있습니다.
+사용량·초기화 시각·Codex 리셋 크레딧·AGY 크레딧을 표시하고 남은 한도에 따라
+계정을 추천합니다.
 
 앱은 공급자 집중 화면을 기본으로 사용합니다. 왼쪽의 `전체`에서 네 공급자를
 한 번에 비교하거나 Claude·Codex·Grok·Gemini를 선택해 계정별 상세 상태와
 전환 동작을 확인할 수 있습니다.
+
+앱은 공급자를 식별하는 용도로만 각 제공사의 원본 공식 artwork·아이콘을 그대로
+사용합니다. Switchboard는 Anthropic·OpenAI·xAI/X·Google과 제휴하거나 보증을
+받지 않으며, 각 상표의 권리는 해당 소유자에게 있습니다.
 
 | 공급자 | 상태 읽기 | 앱 동작 |
 |---|---|---|
@@ -23,6 +29,13 @@ Claude/Codex usage API, Grok 로컬 `/usage`, Antigravity의 읽기 전용
 | Codex | 5시간/주간 사용량, 초기화, 리셋/추가 크레딧 | 저장 계정 전환 후 `auth.json` account ID readback 확인 |
 | Grok | 주간 사용량과 초기화 | 기존 세션은 유지하고 선택한 `GROK_HOME` 프로필로 새 세션 실행 |
 | Antigravity (`agy`) | Gemini 모델 quota와 크레딧 | 공식 계정 전환 명령이 없어 CLI 재인증 안내만 제공 |
+
+Codex CLI는 `~/.codex/auth.json`만 갱신하고, 갱신할 때 refresh token이
+회전합니다. 계정 목록과 전환 화면은 진입할 때 활성 `auth.json`을 그 계정의
+저장 스냅샷(`~/.codex/accounts/auth_{id}.json`)에 되씁니다. 그래서 다른
+계정으로 로그인해도 이전 계정이 소진된 토큰에 묶여 `codex login`을 다시
+요구하지 않습니다. 더 최신인 스냅샷을 오래된 값으로 덮지 않고, 심볼릭 링크
+스냅샷은 거부합니다.
 
 Grok 웹의 “사용 한도 재설정” 횟수·만료일은 안정된 로컬 API가 없으므로
 앱에서 값을 추측하지 않습니다. 대신 웹 Usage 화면을 여는 링크를 제공하고,

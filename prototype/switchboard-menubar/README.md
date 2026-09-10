@@ -25,7 +25,7 @@ B 화면은 공급자마다 같은 구조를 유지합니다.
 - Grok: `GROK_HOME` 프로필이 실제로 설정돼 있을 때만 기존 세션을 건드리지 않는 `새 Grok 세션 열기` 동선을 표시
 - AGY/Gemini: 즉시 전환은 지원하지 않으며, 사용량 새로고침 및 CLI 재인증 안내만 표시
 
-앱 번들의 `live_snapshot.py`가 allowlist JSON을 통해 Claude/Codex usage API, Grok 로컬 `/usage`, Antigravity의 `/usage`·`/credits`를 읽습니다. 레거시 Gemini CLI 계정 파일은 읽지 않습니다. 자격 증명 값은 Swift 앱이나 스냅샷에 포함하지 않습니다. 사용량을 읽을 수 없는 공급자에만 비교용 DEMO 계정을 추가하며, DEMO 행은 실제 전환되지 않고 추천 후보에서도 제외됩니다.
+앱 번들의 `live_snapshot.py`가 allowlist JSON을 통해 Claude/Codex usage API, Grok 로컬 `/usage`, Antigravity의 `/usage`·`/credits`를 읽습니다. 레거시 Gemini CLI 계정 파일은 읽지 않습니다. 자격 증명 값은 Swift 앱이나 스냅샷에 포함하지 않습니다. 일반 실행은 LIVE 데이터만 사용하므로 사용량을 읽을 수 없는 공급자는 가용하지 않음으로 표시하며, 비교용 DEMO 계정을 섞지 않습니다. 익명 예시 데이터는 명시적인 `--demo-only`에서만 사용합니다.
 
 공급자가 반환한 단위와 이름은 그대로 보존하고, 응답에 없는 한도·크레딧은 추정하지 않습니다. 이전 성공값은 재사용하지 않으므로 조회가 실패하면 해당 LIVE 사용량을 가용하지 않은 상태로 표시합니다.
 

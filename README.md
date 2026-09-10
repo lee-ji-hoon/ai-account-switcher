@@ -9,13 +9,19 @@ One place to monitor and switch accounts for AI coding CLIs. The current CLI plu
 ![Switchboard demo with no personal information](docs/images/switchboard-overview.png)
 
 The app reads Claude/Codex usage APIs, Grok's local `/usage`, and Antigravity's
-read-only `/usage` and `/credits` JSON. It distinguishes `LIVE` from supporting
-`DEMO` rows, shows usage/reset times and provider-reported credits, and recommends
-an account from the remaining quota.
+read-only `/usage` and `/credits` JSON. Normal launches show `LIVE` data only:
+when live usage is unavailable, that provider is shown as unavailable rather
+than supplemented with sample data. `DEMO` samples are available only through
+the explicit `--demo-only` capture mode. The app shows usage/reset times and
+provider-reported credits, and recommends an account from the remaining quota.
 
 The provider-focused view is the default. Use `Overview` in the left sidebar to
 compare all four providers, or select Claude, Codex, Grok, or Gemini to inspect
 account details and available switching actions.
+
+The app uses each provider's unmodified official artwork or icon only to identify
+that provider. Switchboard is not affiliated with or endorsed by Anthropic,
+OpenAI, xAI/X, or Google; their marks remain their respective owners' property.
 
 | Provider | Status | App action |
 |---|---|---|
@@ -23,6 +29,13 @@ account details and available switching actions.
 | Codex | 5-hour/weekly usage, reset, reset/extra credits | Switch saved account and verify the `auth.json` account ID |
 | Grok | Weekly usage and reset | Keep existing sessions intact and launch a new session with the selected `GROK_HOME` profile |
 | Antigravity (`agy`) | Gemini model quota and credits | Show CLI re-authentication guidance because no official account-switch command is available |
+
+The Codex CLI refreshes only `~/.codex/auth.json`, and each refresh rotates the
+refresh token. The account list and switch screens write that active `auth.json`
+back to the owning account's stored snapshot (`~/.codex/accounts/auth_{id}.json`)
+on entry, so logging in as another account no longer strands the previous one on
+a spent token that demands `codex login` again. A newer snapshot is never
+downgraded, and symlinked snapshots are refused.
 
 Grok's web-only usage-reset count and expiry have no stable local API, so the
 app does not guess them. It links to the web Usage page and never applies a reset,

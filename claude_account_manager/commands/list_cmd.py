@@ -237,7 +237,7 @@ def cmd_list():
     from ..codex_provider import (
         is_codex_available, load_codex_index, get_current_codex_account_id,
         get_codex_token_status, CODEX_ACCOUNTS_DIR, read_codex_auth, get_codex_auth_info,
-        fetch_codex_usage,
+        fetch_codex_usage, sync_active_codex_snapshot,
     )
 
     def _disp_len(s):
@@ -290,6 +290,8 @@ def cmd_list():
     claude_count = len(index["accounts"])
 
     if is_codex_available():
+        # 목록을 그리기 전에 Codex CLI가 갱신한 활성 auth를 소유 계정 스냅샷에 반영한다.
+        sync_active_codex_snapshot()
         codex_index = load_codex_index()
         codex_accounts = codex_index.get("accounts", [])
         if codex_accounts:
@@ -327,17 +329,17 @@ def cmd_list():
                 usage_data = fetch_codex_usage(auth_data) if auth_data else None
                 if usage_data:
                     rows = []
-                    rl = usage_data.get("rate_limit", {})
+                    rl = usage_data.get("rate_limit") or {}
                     for key in ("primary_window", "secondary_window"):
                         window = rl.get(key)
                         if window:
                             rows.append((_codex_window_label(window), window))
-                    for extra in usage_data.get("additional_rate_limits", []):
+                    for extra in usage_data.get("additional_rate_limits") or []:
                         short_name = extra.get("limit_name", "") or ""
                         if "Spark" in short_name:
                             continue
                         short_name = short_name.replace("GPT-5.3-Codex-", "").replace("GPT-5-Codex-", "")
-                        erl = extra.get("rate_limit", {})
+                        erl = extra.get("rate_limit") or {}
                         for key in ("primary_window", "secondary_window"):
                             window = erl.get(key)
                             if window:
@@ -365,6 +367,42 @@ def cmd_list():
                             print(f"      {c(Colors.DIM, '토큰')} {c(expire_color, f'🔑 {days}d {hrs}h 후 만료')}")
                         except Exception:
                             pass
+
+    # ── Grok (x.ai) ────────────────────────────────────────────────
+    # 사용량 %·재설정 시각은 API가 없어(실측: /v1/usage 등 404) 가져오지 못한다.
+    # 대신 최소 요청 1회로 "지금 쓸 수 있나"를 판정한다 — 403 spending-limit은
+    # 인증 실패가 아니라 한도 소진이라, 구분해야 재로그인 삽질을 막는다.
+    from ..grok_provider import (
+        is_grok_available, load_grok_accounts, get_grok_token_status,
+        probe_grok_entitlement, STATUS_LABELS, GROK_USAGE_URL,
+    )
+
+    if is_grok_available():
+        grok_accounts = load_grok_accounts()
+        if grok_accounts:
+            print()
+            print(f"  {c(Colors.DIM, 'Grok')}")
+            for acc in grok_accounts:
+                label = acc.get("name") or acc.get("email") or "(unknown)"
+                print(f"    {c(Colors.CYAN, label)} {c(Colors.DIM, acc.get('email', ''))}")
+
+                state, detail = probe_grok_entitlement(acc.get("access_token", ""))
+                text = STATUS_LABELS.get(state, state)
+                if state == "ok":
+                    print(f"      {c(Colors.GREEN, '● ' + text)}")
+                elif state == "quota_exhausted":
+                    print(f"      {c(Colors.RED, '● ' + text)} - {c(Colors.YELLOW, GROK_USAGE_URL)}")
+                    print(f"      {c(Colors.DIM, '재설정 시각·일회성 리셋 티켓은 위 페이지에서만 확인된다')}")
+                elif state == "unauthorized":
+                    print(f"      {c(Colors.RED, '● ' + text)} - {c(Colors.YELLOW, 'grok 재로그인 필요')}")
+                else:
+                    print(f"      {c(Colors.DIM, '● ' + text)} {c(Colors.DIM, detail[:60])}")
+
+                ts = get_grok_token_status(acc)
+                if ts == "expired":
+                    print(f"      {c(Colors.DIM, '토큰')} {c(Colors.DIM, '만료 — grok CLI 실행 시 자동 갱신')}")
+                elif ts == "expiring":
+                    print(f"      {c(Colors.DIM, '토큰')} {c(Colors.YELLOW, '1시간 내 만료')}")
 
     print(c(Colors.DIM, "  " + "─" * 55))
 

@@ -211,6 +211,40 @@ class VersionContractTests(unittest.TestCase):
         self.assertIn('CFBundleShortVersionString', run_script)
         self.assertIn('CFBundleVersion', run_script)
 
+    def test_macos_build_runner_reserves_stdout_for_app_path(self):
+        run_script = (ROOT / "prototype/switchboard-menubar/run.sh").read_text(encoding="utf-8")
+
+        self.assertIn("swift build >&2", run_script)
+        self.assertIn("printf '%s\\n' \"$APP_DIR\"", run_script)
+
+    def test_macos_build_runner_preserves_build_failure_and_logs(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            bin_directory = Path(temporary_directory) / "bin"
+            bin_directory.mkdir()
+            swift = bin_directory / "swift"
+            swift.write_text(
+                "#!/bin/sh\n"
+                "echo 'fake build progress'\n"
+                "echo 'fake build failure' >&2\n"
+                "exit 37\n",
+                encoding="utf-8",
+            )
+            swift.chmod(0o755)
+            environment = os.environ.copy()
+            environment["PATH"] = "%s:%s" % (bin_directory, environment["PATH"])
+
+            result = subprocess.run(
+                [str(ROOT / "prototype/switchboard-menubar/run.sh"), "--build-only"],
+                env=environment,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(37, result.returncode)
+        self.assertEqual("", result.stdout)
+        self.assertIn("fake build progress", result.stderr)
+        self.assertIn("fake build failure", result.stderr)
+
     def test_macos_package_uses_release_runner_swift_tools_version(self):
         package = (ROOT / "prototype/switchboard-menubar/Package.swift").read_text(
             encoding="utf-8"
@@ -228,6 +262,8 @@ class VersionContractTests(unittest.TestCase):
         )
         self.assertIn("runs-on: macos-14", workflow)
         self.assertIn("prototype/switchboard-menubar/run.sh --build-only", workflow)
+        self.assertIn('app_path="$(prototype/switchboard-menubar/run.sh --build-only)"', workflow)
+        self.assertNotIn("run.sh --build-only | tail", workflow)
         self.assertIn("codesign --verify --deep --strict", workflow)
         self.assertIn("Switchboard-macos.zip", workflow)
         self.assertIn("actions/upload-artifact@v4", workflow)

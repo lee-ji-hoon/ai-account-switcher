@@ -207,7 +207,7 @@ def codex_provider() -> dict:
         usage = fetch_codex_usage(auth) if auth else None
         windows = []
         if usage:
-            rate_limit = usage.get("rate_limit", {})
+            rate_limit = usage.get("rate_limit") or {}
             for key in ("primary_window", "secondary_window"):
                 item = rate_limit.get(key)
                 if item:

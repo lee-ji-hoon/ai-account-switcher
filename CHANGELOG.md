@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.3] - 2026-09-10
+
+### Added
+- **Grok 계정 상태** — `list`에 Grok 섹션을 추가하고, 403의 사유가 주간 한도 소진(`spending-limit`)인지 인증 실패(401)인지 구분해 표시한다. 재로그인이 소용없는 한도 소진을 인증 문제로 오진하지 않는다.
+
+### Changed
+- **라이브 전용 데이터** — 일반 실행은 `LIVE` 사용량만 표시하고, 읽지 못한 공급자는 예시로 보강하지 않고 가용하지 않음으로 표시한다. `DEMO` 예시는 `--demo-only` 캡처 모드에서만 쓴다.
+- **공급자 화면 정리** — 공급자별 레이아웃과 원본 공식 아이콘을 정리했다.
+
+### Fixed
+- **Codex 계정 목록 크래시** — `/backend-api/codex/usage`가 `additional_rate_limits`·`rate_limit`을 `null`로 돌려주는 계정(예: Plus)에서 `account` 목록이 `TypeError: 'NoneType' object is not iterable`로 죽었다. 누락 키와 `null` 값을 모두 방어한다.
+- **Codex 인증 스냅샷 드리프트** — Codex CLI가 `~/.codex/auth.json`을 갱신할 때 회전하는 refresh token이 저장 스냅샷에 반영되지 않아, 다른 계정으로 로그인하면 이전 계정이 만료 토큰에 묶여 `codex login`을 다시 요구했다. 목록·전환 진입 시 활성 auth를 소유 계정 스냅샷에 되쓰고, 더 최신 스냅샷의 downgrade와 심볼릭 링크 스냅샷은 거부한다.
+- **Codex 첫 등록 게이트** — 계정 인덱스가 없는 새 머신에서 등록 메뉴 자체가 뜨지 않아 첫 Codex 계정을 저장할 수 없던 닭-달걀 구조를 열었다.
+- **macOS 릴리스 빌드 실패 보존** — 빌드 실패가 파이프라인에서 삼켜지지 않도록 종료 코드를 보존한다.
+
+### Documentation
+- `README.md`와 `README.ko.md`에 Codex 인증 스냅샷 동기화 계약(회전 토큰 보존·downgrade 거부·심볼릭 링크 거부)을 기록하고, 라이브 전용 데이터 정책과 공급자 아이콘·상표 고지를 반영했다.
+
 ## [3.0.2] - 2026-08-17
 
 ### Changed

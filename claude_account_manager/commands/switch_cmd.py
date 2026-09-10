@@ -17,7 +17,7 @@ from ..account import estimate_plan, is_same_account, _is_real_org
 from ..api import _fetch_usage_from_api
 from ..codex_provider import (
     is_codex_available, load_codex_index, get_current_codex_account_id,
-    get_codex_token_status, switch_codex_account,
+    get_codex_token_status, switch_codex_account, sync_active_codex_snapshot,
     CODEX_ACCOUNTS_DIR, read_codex_auth, get_codex_auth_info, fetch_codex_usage,
 )
 
@@ -189,6 +189,7 @@ def cmd_switch(account_id=None):
         claude_count = len(index["accounts"])
         codex_accounts = []
         if is_codex_available():
+            sync_active_codex_snapshot()
             codex_index = load_codex_index()
             codex_accounts = codex_index.get("accounts", [])
             if codex_accounts:
@@ -224,14 +225,14 @@ def cmd_switch(account_id=None):
                     usage_data = fetch_codex_usage(auth_data) if auth_data else None
                     if usage_data:
                         rows = []
-                        rl = usage_data.get("rate_limit", {})
+                        rl = usage_data.get("rate_limit") or {}
                         if rl.get("primary_window"):
                             rows.append(("5h", rl["primary_window"]))
                         if rl.get("secondary_window"):
                             rows.append(("주간", rl["secondary_window"]))
-                        for extra in usage_data.get("additional_rate_limits", []):
-                            sn = extra.get("limit_name", "").replace("GPT-5.3-Codex-", "").replace("GPT-5-Codex-", "")
-                            erl = extra.get("rate_limit", {})
+                        for extra in usage_data.get("additional_rate_limits") or []:
+                            sn = (extra.get("limit_name") or "").replace("GPT-5.3-Codex-", "").replace("GPT-5-Codex-", "")
+                            erl = extra.get("rate_limit") or {}
                             if erl.get("primary_window"):
                                 rows.append((f"{sn} 5h", erl["primary_window"]))
                             if erl.get("secondary_window"):

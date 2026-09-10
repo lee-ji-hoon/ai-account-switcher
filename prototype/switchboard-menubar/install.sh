@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_SOURCE="$("$SCRIPT_DIR/run.sh" --build-only | tail -n 1)"
+APP_SOURCE="$("$SCRIPT_DIR/run.sh" --build-only)"
 TARGET_DIR="$HOME/Applications"
 TARGET_APP="$TARGET_DIR/Switchboard.app"
 BACKUP_APP=""

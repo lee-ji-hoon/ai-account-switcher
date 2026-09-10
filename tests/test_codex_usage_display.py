@@ -89,6 +89,13 @@ class CodexUsageDisplayTest(unittest.TestCase):
                     side_effect=fetch_usage,
                 )
             )
+            # 렌더링 테스트가 실제 ~/.codex/accounts 스냅샷을 건드리지 않게 한다
+            stack.enter_context(
+                patch(
+                    "claude_account_manager.codex_provider.write_codex_auth",
+                    return_value=True,
+                )
+            )
             stack.enter_context(
                 patch(
                     "claude_account_manager.codex_provider.get_codex_token_status",
@@ -139,6 +146,37 @@ class CodexUsageDisplayTest(unittest.TestCase):
         self.assertRegex(output, r"토큰 🔑 \d+d \d+h 후 만료")
         self.assertNotIn("🔑 -", output)
         self.assertIs(fetched_auth[0], live_auth)
+
+    def test_null_usage_sections_render_without_crashing(self):
+        # /backend-api/codex/usage는 해당 한도가 없는 계정에 키를 null로 돌려준다.
+        # get(key, default)는 null을 그대로 통과시켜 반복/속성 접근에서 터졌다.
+        usage = {
+            "rate_limit": {
+                "primary_window": {
+                    "limit_window_seconds": 18000,
+                    "used_percent": 12,
+                    "reset_after_seconds": 3600,
+                }
+            },
+            "additional_rate_limits": None,
+        }
+
+        output, _, _ = self._render_current_usage(usage)
+
+        self.assertIn("12%", output)
+
+    def test_null_rate_limit_sections_render_without_crashing(self):
+        usage = {
+            "rate_limit": None,
+            "additional_rate_limits": [
+                {"limit_name": "GPT-5.3-Codex-Mini", "rate_limit": None},
+                {"limit_name": None, "rate_limit": None},
+            ],
+        }
+
+        output, _, _ = self._render_current_usage(usage)
+
+        self.assertIn("work@example.com", output)
 
     def test_weekly_primary_window_is_not_mislabeled_as_five_hours(self):
         usage = {

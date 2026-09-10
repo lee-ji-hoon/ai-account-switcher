@@ -57,7 +57,8 @@ jobs:
           bash tests/test_install_shell.sh
       - name: Build and verify Switchboard.app
         run: |
-          app_path="$(prototype/switchboard-menubar/run.sh --build-only | tail -n 1)"
+          set -euo pipefail
+          app_path="$(prototype/switchboard-menubar/run.sh --build-only)"
           test -d "$app_path"
           codesign --verify --deep --strict "$app_path"
           ditto -c -k --sequesterRsrc --keepParent "$app_path" Switchboard-macos.zip

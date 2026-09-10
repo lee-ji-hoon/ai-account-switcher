@@ -10,6 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class AppInstallContractTest(unittest.TestCase):
+    def test_build_failure_is_not_hidden_by_output_filtering(self):
+        source = (ROOT / "install.sh").read_text()
+        self.assertIn('APP_SOURCE="$("$SCRIPT_DIR/run.sh" --build-only)"', source)
+        self.assertNotIn("tail -n 1", source)
+
     def test_failed_copy_restores_previous_app(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
