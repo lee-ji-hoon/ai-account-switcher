@@ -318,9 +318,12 @@ esac
         target_auth = {"tokens": {"account_id": "target-upstream"}}
         concurrent_auth = {"tokens": {"account_id": "concurrent", "refresh_token": "new"}}
         account = {"id": "target", "account_id": "target-upstream"}
+        # 첫 read는 switch 진입부의 스냅샷 동기화가 읽는 활성 auth다. 인덱스를
+        # 비워 동기화를 무동작으로 만들고 롤백 경로만 검사한다.
         with tempfile.TemporaryDirectory() as temporary_directory, \
              mock.patch.object(codex_provider, "CODEX_ACCOUNTS_DIR", Path(temporary_directory)), \
-             mock.patch.object(codex_provider, "read_codex_auth", side_effect=[target_auth, old_auth, concurrent_auth]), \
+             mock.patch.object(codex_provider, "load_codex_index", return_value={"accounts": []}), \
+             mock.patch.object(codex_provider, "read_codex_auth", side_effect=[old_auth, target_auth, old_auth, concurrent_auth]), \
              mock.patch.object(codex_provider, "write_codex_auth", return_value=True) as write_auth, \
              mock.patch.object(codex_provider, "get_current_codex_account_id", return_value="concurrent"):
             ok, message = codex_provider.switch_codex_account(account)

@@ -237,7 +237,7 @@ def cmd_list():
     from ..codex_provider import (
         is_codex_available, load_codex_index, get_current_codex_account_id,
         get_codex_token_status, CODEX_ACCOUNTS_DIR, read_codex_auth, get_codex_auth_info,
-        fetch_codex_usage,
+        fetch_codex_usage, sync_active_codex_snapshot,
     )
 
     def _disp_len(s):
@@ -290,6 +290,8 @@ def cmd_list():
     claude_count = len(index["accounts"])
 
     if is_codex_available():
+        # 목록을 그리기 전에 Codex CLI가 갱신한 활성 auth를 소유 계정 스냅샷에 반영한다.
+        sync_active_codex_snapshot()
         codex_index = load_codex_index()
         codex_accounts = codex_index.get("accounts", [])
         if codex_accounts:
@@ -327,17 +329,17 @@ def cmd_list():
                 usage_data = fetch_codex_usage(auth_data) if auth_data else None
                 if usage_data:
                     rows = []
-                    rl = usage_data.get("rate_limit", {})
+                    rl = usage_data.get("rate_limit") or {}
                     for key in ("primary_window", "secondary_window"):
                         window = rl.get(key)
                         if window:
                             rows.append((_codex_window_label(window), window))
-                    for extra in usage_data.get("additional_rate_limits", []):
+                    for extra in usage_data.get("additional_rate_limits") or []:
                         short_name = extra.get("limit_name", "") or ""
                         if "Spark" in short_name:
                             continue
                         short_name = short_name.replace("GPT-5.3-Codex-", "").replace("GPT-5-Codex-", "")
-                        erl = extra.get("rate_limit", {})
+                        erl = extra.get("rate_limit") or {}
                         for key in ("primary_window", "secondary_window"):
                             window = erl.get(key)
                             if window:
