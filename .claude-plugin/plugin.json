@@ -1,7 +1,7 @@
 {
   "name": "account",
   "description": "Switchboard for Claude Code - switch accounts, monitor usage, auto-refresh tokens",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "author": {
     "name": "ezhoon"
   },

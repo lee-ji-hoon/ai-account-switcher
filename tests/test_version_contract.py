@@ -252,6 +252,27 @@ class VersionContractTests(unittest.TestCase):
         self.assertIn("// swift-tools-version: 5.10", package)
         self.assertNotIn("// swift-tools-version: 6.0", package)
 
+    def test_swift_sources_avoid_trailing_commas_rejected_by_swift_5_10(self):
+        # SE-0439 trailing commas는 Swift 6.1+ 컴파일러만 받는다. 로컬 툴체인이
+        # 최신이면 통과하지만 릴리스 러너의 Swift 5.10은 'unexpected ",",
+        # separator'로 실패한다(실측: v3.0.3 워크플로 34439318097). 선언된
+        # swift-tools-version이 5.10이어도 문법은 컴파일러 버전이 정하므로,
+        # 로컬 빌드로는 못 잡고 정적 검사로 고정한다.
+        offenders = []
+        for source in sorted(
+            (ROOT / "prototype/switchboard-menubar").rglob("*.swift")
+        ):
+            lines = source.read_text(encoding="utf-8").splitlines()
+            for index, line in enumerate(lines):
+                if not line.rstrip().endswith(","):
+                    continue
+                following = lines[index + 1].strip() if index + 1 < len(lines) else ""
+                if following.startswith(")"):
+                    offenders.append(
+                        "{}:{}".format(source.relative_to(ROOT), index + 1)
+                    )
+        self.assertEqual([], offenders)
+
     def test_tag_workflow_enforces_and_publishes_release_notes(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
 

@@ -30,12 +30,13 @@ Claude/Codex usage API, Grok 로컬 `/usage`, Antigravity의 읽기 전용
 | Grok | 주간 사용량과 초기화 | 기존 세션은 유지하고 선택한 `GROK_HOME` 프로필로 새 세션 실행 |
 | Antigravity (`agy`) | Gemini 모델 quota와 크레딧 | 공식 계정 전환 명령이 없어 CLI 재인증 안내만 제공 |
 
-Codex CLI는 `~/.codex/auth.json`만 갱신하고, 갱신할 때 refresh token이
-회전합니다. 계정 목록과 전환 화면은 진입할 때 활성 `auth.json`을 그 계정의
-저장 스냅샷(`~/.codex/accounts/auth_{id}.json`)에 되씁니다. 그래서 다른
-계정으로 로그인해도 이전 계정이 소진된 토큰에 묶여 `codex login`을 다시
-요구하지 않습니다. 더 최신인 스냅샷을 오래된 값으로 덮지 않고, 심볼릭 링크
-스냅샷은 거부합니다.
+Codex CLI는 `~/.codex/auth.json`만 갱신하므로, 저장 스냅샷
+(`~/.codex/accounts/auth_{id}.json`)은 등록 시점 토큰에 묶여 시간이 지나면
+만료로 표시됩니다. 계정 목록과 전환 화면은 진입할 때 활성 `auth.json`을 그
+계정의 스냅샷에 되써서 활성 계정이 이 드리프트에 빠지지 않게 합니다. 더 최신인
+스냅샷을 오래된 값으로 덮지 않고, 심볼릭 링크 스냅샷은 거부합니다. 이미 만료된
+비활성 계정의 스냅샷은 되살리지 못하므로 해당 계정으로 `codex login`이
+필요합니다.
 
 Grok 웹의 “사용 한도 재설정” 횟수·만료일은 안정된 로컬 API가 없으므로
 앱에서 값을 추측하지 않습니다. 대신 웹 Usage 화면을 여는 링크를 제공하고,

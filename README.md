@@ -30,12 +30,13 @@ OpenAI, xAI/X, or Google; their marks remain their respective owners' property.
 | Grok | Weekly usage and reset | Keep existing sessions intact and launch a new session with the selected `GROK_HOME` profile |
 | Antigravity (`agy`) | Gemini model quota and credits | Show CLI re-authentication guidance because no official account-switch command is available |
 
-The Codex CLI refreshes only `~/.codex/auth.json`, and each refresh rotates the
-refresh token. The account list and switch screens write that active `auth.json`
-back to the owning account's stored snapshot (`~/.codex/accounts/auth_{id}.json`)
-on entry, so logging in as another account no longer strands the previous one on
-a spent token that demands `codex login` again. A newer snapshot is never
-downgraded, and symlinked snapshots are refused.
+The Codex CLI refreshes only `~/.codex/auth.json`, so a stored snapshot
+(`~/.codex/accounts/auth_{id}.json`) stays pinned to its registration-time token
+and eventually reads as expired. The account list and switch screens write the
+active `auth.json` back to its owning snapshot on entry, keeping the active
+account out of that drift. A newer snapshot is never downgraded, and symlinked
+snapshots are refused. A snapshot that already expired while inactive cannot be
+revived this way and still needs `codex login` for that account.
 
 Grok's web-only usage-reset count and expiry have no stable local API, so the
 app does not guess them. It links to the web Usage page and never applies a reset,
